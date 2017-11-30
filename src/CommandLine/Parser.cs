@@ -87,13 +87,10 @@ namespace CommandLine
         {
             if (args == null) throw new ArgumentNullException("args");
 
-            var factory = typeof(T).IsMutable()
-                ? Maybe.Just<Func<T>>(Activator.CreateInstance<T>)
-                : Maybe.Nothing<Func<T>>();
-
             return MakeParserResult(
                 InstanceBuilder.Build(
-                    factory,
+                    typeof(T),
+                    Maybe.Nothing<Func<T>>(),
                     (arguments, optionSpecs) => Tokenize(arguments, optionSpecs, settings),
                     args,
                     settings.NameComparer,
@@ -108,7 +105,7 @@ namespace CommandLine
         /// Grammar rules are defined decorating public properties with appropriate attributes.
         /// </summary>
         /// <typeparam name="T">Type of the target instance built with parsed value.</typeparam>
-        /// <param name="factory">A <see cref="System.Func{T}"/> delegate used to initialize the target instance.</param>
+        /// <param name="factory">A <see cref="System.Func{T}"/> delegate used to intitalize the target instance.</param>
         /// <param name="args">A <see cref="System.String"/> array of command line arguments, normally supplied by application entry point.</param>
         /// <returns>A <see cref="CommandLine.ParserResult{T}"/> containing an instance of type <typeparamref name="T"/> with parsed values
         /// and a sequence of <see cref="CommandLine.Error"/>.</returns>
@@ -117,11 +114,11 @@ namespace CommandLine
             where T : new()
         {
             if (factory == null) throw new ArgumentNullException("factory");
-            if (!typeof(T).IsMutable()) throw new ArgumentException("factory");
             if (args == null) throw new ArgumentNullException("args");
 
             return MakeParserResult(
                 InstanceBuilder.Build(
+                    typeof(T),
                     Maybe.Just(factory),
                     (arguments, optionSpecs) => Tokenize(arguments, optionSpecs, settings),
                     args,
@@ -143,7 +140,7 @@ namespace CommandLine
         /// and a sequence of <see cref="CommandLine.Error"/>.</returns>
         /// <exception cref="System.ArgumentNullException">Thrown if one or more arguments are null.</exception>
         /// <exception cref="System.ArgumentOutOfRangeException">Thrown if <paramref name="types"/> array is empty.</exception>
-        /// <remarks>All types must expose a parameterless constructor. It's strongly recommended to use a generic overload.</remarks>
+        /// <remarks>All types must expose a parameterless constructor. It's stronly recommended to use a generic overload.</remarks>
         public ParserResult<object> ParseArguments(IEnumerable<string> args, params Type[] types)
         {
             if (args == null) throw new ArgumentNullException("args");
@@ -156,6 +153,60 @@ namespace CommandLine
                     types,
                     args,
                     settings.NameComparer,
+                    settings.ParsingCulture,
+                    HandleUnknownArguments(settings.IgnoreUnknownArguments)),
+                settings);
+        }
+
+        /// <summary>
+        /// Parses a string array of command line arguments and sets the properties of the provided instance.
+        /// Grammar rules are defined decorating public properties with appropriate attributes.
+        /// </summary>
+        /// <param name="instance">The instance.</param>
+        /// <param name="args">A <see cref="System.String"/> array of command line arguments, normally supplied by application entry point.</param>
+        /// <returns>A <see cref="CommandLine.ParserResult{T}"/> containing an instance of the specified type with parsed values
+        /// and a sequence of <see cref="CommandLine.Error"/>.</returns>
+        /// <exception cref="System.ArgumentNullException">Thrown if one or more arguments are null.</exception>
+        public ParserResult<T> ParseArguments<T>(T instance, IEnumerable<string> args)
+        {
+            if (instance == null) throw new ArgumentNullException("instance");
+            if (args == null) throw new ArgumentNullException("args");
+
+            return MakeParserResult(
+                InstanceBuilder.Build(
+                    instance.GetType(),
+                    Maybe.Just<Func<T>>(() => instance),
+                    (arguments, optionSpecs) => Tokenize(arguments, optionSpecs, settings),
+                    args,
+                    settings.NameComparer,
+                    settings.CaseInsensitiveEnumValues,
+                    settings.ParsingCulture,
+                    HandleUnknownArguments(settings.IgnoreUnknownArguments)),
+                settings);
+        }
+
+        /// <summary>
+        /// Parses a string array of command line arguments constructing values in an instance the specified type.
+        /// Grammar rules are defined decorating public properties with appropriate attributes.
+        /// </summary>
+        /// <param name="type">The type of the instance to create.</param>
+        /// <param name="args">A <see cref="System.String"/> array of command line arguments, normally supplied by application entry point.</param>
+        /// <returns>A <see cref="CommandLine.ParserResult{Object}"/> containing an instance of the specified type with parsed values
+        /// and a sequence of <see cref="CommandLine.Error"/>.</returns>
+        /// <exception cref="System.ArgumentNullException">Thrown if one or more arguments are null.</exception>
+        public ParserResult<object> ParseArguments(Type type, IEnumerable<string> args)
+        {
+            if (type == null) throw new ArgumentNullException("type");
+            if (args == null) throw new ArgumentNullException("args");
+
+            return MakeParserResult(
+                InstanceBuilder.Build(
+                    type,
+                    Maybe.Nothing<Func<object>>(),
+                    (arguments, optionSpecs) => Tokenize(arguments, optionSpecs, settings),
+                    args,
+                    settings.NameComparer,
+                    settings.CaseInsensitiveEnumValues,
                     settings.ParsingCulture,
                     HandleUnknownArguments(settings.IgnoreUnknownArguments)),
                 settings);
