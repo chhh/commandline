@@ -85,7 +85,8 @@ namespace CommandLine.Infrastructure
         public static T CreateDefaultImmutableInstance<T>(Type[] constructorTypes)
         {
             var t = typeof(T);
-            var ctor = t.GetTypeInfo().GetConstructor(constructorTypes);
+            
+            var ctor = CommandLine.Core.ReflectionExtensions.GetTypeInfo(t).GetConstructor(constructorTypes);
             var values = (from prms in ctor.GetParameters()
                           select prms.ParameterType.CreateDefaultForImmutable()).ToArray();
             return (T)ctor.Invoke(values);
@@ -93,7 +94,8 @@ namespace CommandLine.Infrastructure
 
         public static object CreateDefaultImmutableInstance(Type type, Type[] constructorTypes)
         {
-            var ctor = type.GetTypeInfo().GetConstructor(constructorTypes);
+            
+            var ctor = CommandLine.Core.ReflectionExtensions.GetTypeInfo(type).GetConstructor(constructorTypes);
             var values = (from prms in ctor.GetParameters()
                           select prms.ParameterType.CreateDefaultForImmutable()).ToArray();
             return ctor.Invoke(values);
