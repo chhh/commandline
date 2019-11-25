@@ -36,7 +36,7 @@
     <DocumentationFile>bin\Release\CommandLine.XML</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup>
-    <SignAssembly>true</SignAssembly>
+    <SignAssembly>false</SignAssembly>
   </PropertyGroup>
   <PropertyGroup>
     <AssemblyOriginatorKeyFile>..\..\CommandLine.snk</AssemblyOriginatorKeyFile>
